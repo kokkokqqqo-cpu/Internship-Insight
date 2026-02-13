@@ -3,7 +3,7 @@ package com.internmatch.service;
 import com.internmatch.exception.BadRequestException;
 import com.internmatch.exception.NotFoundException;
 import com.internmatch.factory.ApplicationFactory;
-import com.internmatch.model.ApplicationBase;
+import com.internmatch.model.Application;
 import com.internmatch.model.Internship;
 import com.internmatch.model.Student;
 import com.internmatch.repository.ApplicationRepository;
@@ -30,16 +30,16 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationBase applyPaid(Long studentId, Long internshipId, Integer expectedSalary) {
+    public Application applyPaid(Long studentId, Long internshipId, Integer expectedSalary) {
         return applyInternal(studentId, internshipId, expectedSalary, null);
     }
 
     @Transactional
-    public ApplicationBase applyUnpaid(Long studentId, Long internshipId, String motivation) {
+    public Application applyUnpaid(Long studentId, Long internshipId, String motivation) {
         return applyInternal(studentId, internshipId, null, motivation);
     }
 
-    private ApplicationBase applyInternal(Long studentId, Long internshipId, Integer expectedSalary, String motivation) {
+    private Application applyInternal(Long studentId, Long internshipId, Integer expectedSalary, String motivation) {
         Student student = studentService.getById(studentId);
 
         Internship internship = internshipRepository.findById(internshipId)
@@ -50,12 +50,12 @@ public class ApplicationService {
         }
 
         ApplicationFactory factory = new ApplicationFactory();
-        ApplicationBase app = factory.createForInternship(student, internship, expectedSalary, motivation);
+        Application app = factory.createForInternship(student, internship, expectedSalary, motivation);
 
         double score = ScoreCalculator.getInstance().calculate(student, internship);
         app.setScore(score);
 
-        ApplicationBase saved = applicationRepository.save(app);
+        Application saved = applicationRepository.save(app);
 
         internship.setSeatsAvailable(internship.getSeatsAvailable() - 1);
         internshipRepository.save(internship);
@@ -63,11 +63,11 @@ public class ApplicationService {
         return saved;
     }
 
-    public List<ApplicationBase> rankByInternship(Long internshipId) {
+    public List<Application> rankByInternship(Long internshipId) {
         return applicationRepository.findByInternshipIdOrderByScoreDesc(internshipId);
     }
 
-    public List<ApplicationBase> getByStudent(Long studentId) {
+    public List<Application> getByStudent(Long studentId) {
         return applicationRepository.findByStudentIdOrderByCreatedAtDesc(studentId);
     }
 }

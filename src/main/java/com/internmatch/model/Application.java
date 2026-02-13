@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Table(name = "applications")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "app_kind", discriminatorType = DiscriminatorType.STRING)
-public abstract class ApplicationBase {
+public abstract class Application {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,9 +30,9 @@ public abstract class ApplicationBase {
     @Column(nullable = false)
     private String motivation;
 
-    protected ApplicationBase() {}
+    protected Application() {}
 
-    protected ApplicationBase(Student student, Internship internship) {
+    protected Application(Student student, Internship internship) {
         this.student = student;
         this.internship = internship;
         this.createdAt = LocalDateTime.now();

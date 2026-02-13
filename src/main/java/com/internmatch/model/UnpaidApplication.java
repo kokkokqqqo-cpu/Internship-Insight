@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 @Entity
 @DiscriminatorValue("UNPAID")
-public class UnpaidApplication extends ApplicationBase {
+public class UnpaidApplication extends Application {
 
     @Column(nullable = false)
     private String motivation;

@@ -37,4 +37,15 @@ public class SkillService {
         });
         return skillRepository.save(new Skill(name.trim()));
     }
+
+    @Transactional
+    public Skill findOrCreate(String name) {
+        if (name == null || name.isBlank()) {
+            throw new BadRequestException("Skill name is empty");
+        }
+
+        String normalized = name.trim();
+        return skillRepository.findByNameIgnoreCase(normalized)
+                .orElseGet(() -> skillRepository.save(new Skill(normalized)));
+    }
 }

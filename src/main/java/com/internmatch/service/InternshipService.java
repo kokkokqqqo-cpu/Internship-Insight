@@ -1,6 +1,7 @@
 package com.internmatch.service;
 
 import com.internmatch.builder.InternshipBuilder;
+import com.internmatch.cache.SimpleCache;
 import com.internmatch.exception.BadRequestException;
 import com.internmatch.exception.NotFoundException;
 import com.internmatch.model.Company;
@@ -22,6 +23,10 @@ public class InternshipService {
     private final CompanyService companyService;
     private final SkillService skillService;
 
+    private final SimpleCache cache = SimpleCache.getInstance();
+
+    private static final String ALL_INTERNSHIPS_KEY = "allInternships";
+
     public InternshipService(InternshipRepository internshipRepository,
                              CompanyService companyService,
                              SkillService skillService) {
@@ -31,7 +36,17 @@ public class InternshipService {
     }
 
     public List<Internship> getAll() {
-        return internshipRepository.findAll();
+
+        if (cache.contains(ALL_INTERNSHIPS_KEY)) {
+            System.out.println("Returning from CACHE");
+            return cache.get(ALL_INTERNSHIPS_KEY);
+        }
+
+        System.out.println("Returning from DATABASE");
+
+        List<Internship> internships = cache.getOrCompute(ALL_INTERNSHIPS_KEY, internshipRepository::findAll);
+
+        return internships;
     }
 
     public Internship getById(Long id) {
@@ -55,10 +70,10 @@ public class InternshipService {
 
         Set<Skill> skills = new HashSet<>();
         for (String name : requiredSkillNames) {
-            skills.add(skillService.create(name));
+            skills.add(skillService.findOrCreate(name));
         }
 
-        InternshipBuilder b = new InternshipBuilder()
+        InternshipBuilder builder = new InternshipBuilder()
                 .title(title)
                 .company(company)
                 .type(type)
@@ -66,7 +81,11 @@ public class InternshipService {
                 .deadline(deadline)
                 .requiredSkills(skills);
 
-        return internshipRepository.save(b.build());
+        Internship saved = internshipRepository.save(builder.build());
+
+        cache.clear();
+
+        return saved;
     }
 
     @Transactional
@@ -77,7 +96,7 @@ public class InternshipService {
                              LocalDate deadline,
                              Set<String> requiredSkillNames) {
 
-        Internship i = getById(id);
+        Internship internship = getById(id);
 
         if (seatsAvailable == null || seatsAvailable < 1) {
             throw new BadRequestException("seatsAvailable must be >= 1");
@@ -85,21 +104,27 @@ public class InternshipService {
 
         Set<Skill> skills = new HashSet<>();
         for (String name : requiredSkillNames) {
-            skills.add(skillService.create(name));
+            skills.add(skillService.findOrCreate(name));
         }
 
-        i.setTitle(title);
-        i.setType(type);
-        i.setSeatsAvailable(seatsAvailable);
-        i.setDeadline(deadline);
-        i.setRequiredSkills(skills);
+        internship.setTitle(title);
+        internship.setType(type);
+        internship.setSeatsAvailable(seatsAvailable);
+        internship.setDeadline(deadline);
+        internship.setRequiredSkills(skills);
 
-        return internshipRepository.save(i);
+        Internship updated = internshipRepository.save(internship);
+
+        cache.clear();
+
+        return updated;
     }
 
     @Transactional
     public void delete(Long id) {
-        Internship i = getById(id);
-        internshipRepository.delete(i);
+        Internship internship = getById(id);
+        internshipRepository.delete(internship);
+
+        cache.clear();
     }
 }

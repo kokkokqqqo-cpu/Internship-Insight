@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 @Entity
 @DiscriminatorValue("PAID")
-public class PaidApplication extends ApplicationBase {
+public class PaidApplication extends Application {
 
     @Column(nullable = false)
     private Integer expectedSalary;
